@@ -7,6 +7,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material3.Text
 import android.content.Intent
 import android.net.Uri
+import android.provider.OpenableColumns
 
 class MainActivity : ComponentActivity() {
 	
@@ -18,6 +19,17 @@ class MainActivity : ComponentActivity() {
 		if (destinationUri != null && sourceUri != null) {
 			copiarArchivo(sourceUri!!, destinationUri)
 		}
+	}
+	
+	private fun obtenerNombreArchivo(uri: Uri): String {
+		var nombre = "archivo"
+		contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+			val index = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+			if (cursor.moveToFirst() && index >= 0) {
+				nombre = cursor.getString(index)
+			}
+		}
+		return nombre
 	}
 
 	private fun copiarArchivo(origen: Uri, destino: Uri) {
@@ -39,7 +51,7 @@ class MainActivity : ComponentActivity() {
 			}
 			if (uri != null) {
 				sourceUri = uri
-				createDocumentLauncher.launch("archivo_prueba.txt")
+				createDocumentLauncher.launch(obtenerNombreArchivo(uri))
 			}
 			Text(text = mensaje)
 		}
