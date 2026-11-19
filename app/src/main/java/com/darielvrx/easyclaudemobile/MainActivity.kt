@@ -8,7 +8,15 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
@@ -227,12 +235,27 @@ class MainActivity : ComponentActivity() {
 						}
 					}
 				} else {
-					Column {
+					Column(
+						modifier = Modifier
+							.fillMaxSize()
+							.padding(24.dp),
+						verticalArrangement = Arrangement.Center,
+						horizontalAlignment = Alignment.CenterHorizontally
+					) {
 						TextField(
 							value = fileName,
-							onValueChange = { fileName = it }
+							onValueChange = { fileName = it },
+							textStyle = androidx.compose.ui.text.TextStyle(textAlign = TextAlign.Center),
+							colors = TextFieldDefaults.colors(
+								focusedContainerColor = androidx.compose.ui.graphics.Color.Transparent,
+								unfocusedContainerColor = androidx.compose.ui.graphics.Color.Transparent
+							),
+							modifier = Modifier.fillMaxWidth()
 						)
-						Button(onClick = { openTreeLauncher.launch(null) }) {
+						Button(
+							onClick = { openTreeLauncher.launch(null) },
+							modifier = Modifier.padding(top = 16.dp)
+						) {
 							Text("Continuar")
 						}
 					}
