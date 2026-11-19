@@ -10,10 +10,22 @@ import android.net.Uri
 
 class MainActivity : ComponentActivity() {
 	
+	private var sourceUri: Uri? = null
+
 	private val createDocumentLauncher = registerForActivityResult(
 		ActivityResultContracts.CreateDocument("*/*")
 	) { destinationUri: Uri? ->
-		// aquí vamos a copiar el archivo, en el siguiente paso
+		if (destinationUri != null && sourceUri != null) {
+			copiarArchivo(sourceUri!!, destinationUri)
+		}
+	}
+
+	private fun copiarArchivo(origen: Uri, destino: Uri) {
+		contentResolver.openInputStream(origen)?.use { input ->
+			contentResolver.openOutputStream(destino)?.use { output ->
+				input.copyTo(output)
+			}
+		}
 	}
 	
 	override fun onCreate(savedInstanceState: Bundle?) {
@@ -26,6 +38,7 @@ class MainActivity : ComponentActivity() {
 				"Hola, EasyClaude"
 			}
 			if (uri != null) {
+				sourceUri = uri
 				createDocumentLauncher.launch("archivo_prueba.txt")
 			}
 			Text(text = mensaje)
