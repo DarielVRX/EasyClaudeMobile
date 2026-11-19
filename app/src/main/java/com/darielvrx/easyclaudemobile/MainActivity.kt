@@ -56,6 +56,10 @@ class MainActivity : ComponentActivity() {
 	) { treeUri: Uri? ->
 		if (treeUri != null && sourceUri != null) {
 			lastTreeUri = treeUri
+			contentResolver.takePersistableUriPermission(
+				treeUri,
+				Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+			)
 			searchState = SearchState.Searching
 			searchJob = lifecycleScope.launch {
 				val matches = searchMatches(treeUri, fileName)
