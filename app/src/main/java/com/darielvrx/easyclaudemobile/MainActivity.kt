@@ -99,7 +99,7 @@ class MainActivity : ComponentActivity() {
 		searchedName: String,
 		results: MutableList<Uri>
 	) {
-		val documentId = DocumentsContract.getTreeDocumentId(folderUri)
+		val documentId = DocumentsContract.getDocumentId(folderUri)
 		val childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(folderUri, documentId)
 
 		val projection = arrayOf(
@@ -154,9 +154,10 @@ class MainActivity : ComponentActivity() {
 								is SearchState.NoMatches -> Text("Sin coincidencias")
 								is SearchState.HasMatches -> {
 									for (matchUri in currentState.uris) {
-										val path = DocumentsContract.getTreeDocumentId(matchUri)
+										val path = DocumentsContract.getDocumentId(matchUri)
 										Button(onClick = {
 											copyFile(sourceUri!!, matchUri)
+											searchState = null
 										}) {
 											Text(path)
 										}
