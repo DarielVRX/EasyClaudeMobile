@@ -90,17 +90,18 @@ class MainActivity : ComponentActivity() {
 		searchedName: String
 	): List<Uri> = withContext(Dispatchers.IO) {
 		val results = mutableListOf<Uri>()
-		searchInFolder(treeUri, searchedName, results)
+		val rootDocumentId = DocumentsContract.getTreeDocumentId(treeUri)
+		searchInFolder(treeUri, rootDocumentId, searchedName, results)
 		results
 	}
 
 	private suspend fun searchInFolder(
-		folderUri: Uri,
+		treeUri: Uri,
+		folderDocumentId: String,
 		searchedName: String,
 		results: MutableList<Uri>
 	) {
-		val documentId = DocumentsContract.getDocumentId(folderUri)
-		val childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(folderUri, documentId)
+		val childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(treeUri, folderDocumentId)
 
 		val projection = arrayOf(
 			DocumentsContract.Document.COLUMN_DOCUMENT_ID,
@@ -121,14 +122,14 @@ class MainActivity : ComponentActivity() {
 				val childMime = cursor.getString(mimeIndex)
 				val isFolder = childMime == DocumentsContract.Document.MIME_TYPE_DIR
 
-				val childUri = DocumentsContract.buildDocumentUriUsingTree(folderUri, childId)
+				val childUri = DocumentsContract.buildDocumentUriUsingTree(treeUri, childId)
 
 				if (childName == searchedName) {
 					results.add(childUri)
 				}
 
 				if (isFolder) {
-					searchInFolder(childUri, searchedName, results)
+					searchInFolder(treeUri, childId, searchedName, results)
 				}
 			}
 		}
