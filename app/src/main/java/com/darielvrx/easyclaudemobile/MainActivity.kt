@@ -11,7 +11,7 @@ class MainActivity : ComponentActivity() {
 	
 	private val createDocumentLauncher = registerForActivityResult(
 		ActivityResultContracts.CreateDocument("*/*")
-	) { destinationUri ->
+	) { destinationUri: Uri? ->
 		// aquí vamos a copiar el archivo, en el siguiente paso
 	}
 	
