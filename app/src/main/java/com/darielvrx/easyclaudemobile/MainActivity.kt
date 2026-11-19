@@ -7,6 +7,9 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.weight
+import androidx.compose.ui.Modifier
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -18,6 +21,9 @@ import android.provider.OpenableColumns
 import android.provider.DocumentsContract
 import kotlinx.coroutines.ensureActive
 import kotlin.coroutines.coroutineContext
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.Job
 
 sealed class SearchState {
 	object Searching : SearchState()
@@ -30,19 +36,33 @@ class MainActivity : ComponentActivity() {
 	private var sourceUri: Uri? = null
 	private var searchState by mutableStateOf<SearchState?>(null)
 	private var fileName by mutableStateOf("")
+	private var lastTreeUri: Uri? = null
+	private var searchJob: Job? = null
 
 	private val createDocumentLauncher = registerForActivityResult(
 		ActivityResultContracts.CreateDocument("*/*")
 	) { destinationUri: Uri? ->
 		if (destinationUri != null && sourceUri != null) {
 			copyFile(sourceUri!!, destinationUri)
+			searchState = null
 		}
 	}
 
 	private val openTreeLauncher = registerForActivityResult(
 		ActivityResultContracts.OpenDocumentTree()
 	) { treeUri: Uri? ->
-		// aquí vamos a recorrer el árbol, próximo paso
+		if (treeUri != null && sourceUri != null) {
+			lastTreeUri = treeUri
+			searchState = SearchState.Searching
+			searchJob = lifecycleScope.launch {
+				val matches = searchMatches(treeUri, fileName)
+				searchState = if (matches.isEmpty()) {
+					SearchState.NoMatches
+				} else {
+					SearchState.HasMatches(matches)
+				}
+			}
+		}
 	}
 
 	private fun getFileName(uri: Uri): String {
@@ -122,13 +142,53 @@ class MainActivity : ComponentActivity() {
 				if (fileName.isEmpty()) {
 					fileName = getFileName(uri)
 				}
-				Column {
-					TextField(
-						value = fileName,
-						onValueChange = { fileName = it }
-					)
-					Button(onClick = { openTreeLauncher.launch(null) }) {
-						Text("Continuar")
+				val currentState = searchState
+				if (currentState != null) {
+					Column {
+						Text("Buscando: $fileName")
+
+						Column(modifier = Modifier.weight(1f)) {
+							when (currentState) {
+								is SearchState.Searching -> Text("Buscando...")
+								is SearchState.NoMatches -> Text("Sin coincidencias")
+								is SearchState.HasMatches -> {
+									for (matchUri in currentState.uris) {
+										val path = DocumentsContract.getTreeDocumentId(matchUri)
+										Button(onClick = {
+											copyFile(sourceUri!!, matchUri)
+										}) {
+											Text(path)
+										}
+									}
+								}
+							}
+						}
+
+						Row {
+							Button(onClick = {
+								searchJob?.cancel()
+								searchState = null
+								openTreeLauncher.launch(lastTreeUri)
+							}) {
+								Text("Cancelar")
+							}
+							Button(onClick = {
+								searchJob?.cancel()
+								createDocumentLauncher.launch(fileName)
+							}) {
+								Text("Pegar aquí")
+							}
+						}
+					}
+				} else {
+					Column {
+						TextField(
+							value = fileName,
+							onValueChange = { fileName = it }
+						)
+						Button(onClick = { openTreeLauncher.launch(null) }) {
+							Text("Continuar")
+						}
 					}
 				}
 			} else {
