@@ -19,9 +19,17 @@ import android.provider.DocumentsContract
 import kotlinx.coroutines.ensureActive
 import kotlin.coroutines.coroutineContext
 
+sealed class SearchState {
+	object Searching : SearchState()
+	object NoMatches : SearchState()
+	data class HasMatches(val uris: List<Uri>) : SearchState()
+}
+
 class MainActivity : ComponentActivity() {
 
 	private var sourceUri: Uri? = null
+	private var searchState by mutableStateOf<SearchState?>(null)
+	private var fileName by mutableStateOf("")
 
 	private val createDocumentLauncher = registerForActivityResult(
 		ActivityResultContracts.CreateDocument("*/*")
@@ -111,7 +119,9 @@ class MainActivity : ComponentActivity() {
 			val uri = intent.getParcelableExtra<Uri>(Intent.EXTRA_STREAM)
 			if (uri != null) {
 				sourceUri = uri
-				var fileName by remember { mutableStateOf(getFileName(uri)) }
+				if (fileName.isEmpty()) {
+					fileName = getFileName(uri)
+				}
 				Column {
 					TextField(
 						value = fileName,
