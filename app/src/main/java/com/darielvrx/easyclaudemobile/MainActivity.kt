@@ -43,15 +43,6 @@ class MainActivity : ComponentActivity() {
 	private var searchJob: Job? = null
 	private var pendingOverwrite by mutableStateOf<Uri?>(null)
 
-	private val createDocumentLauncher = registerForActivityResult(
-		ActivityResultContracts.CreateDocument("*/*")
-	) { destinationUri: Uri? ->
-		if (destinationUri != null && sourceUri != null) {
-			copyFile(sourceUri!!, destinationUri)
-			finish()
-		}
-	}
-
 	private val openTreeLauncher = registerForActivityResult(
 		ActivityResultContracts.OpenDocumentTree()
 	) { treeUri: Uri? ->
@@ -102,7 +93,8 @@ class MainActivity : ComponentActivity() {
 		treeUri: Uri,
 		folderDocumentId: String,
 		searchedName: String,
-		results: MutableList<Uri>
+		results: MutableList<Uri>,
+		recursive: Boolean = true
 	) {
 		val childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(treeUri, folderDocumentId)
 
@@ -131,8 +123,8 @@ class MainActivity : ComponentActivity() {
 					results.add(childUri)
 				}
 
-				if (isFolder) {
-					searchInFolder(treeUri, childId, searchedName, results)
+				if (isFolder && recursive) {
+					searchInFolder(treeUri, childId, searchedName, results, recursive)
 				}
 			}
 		}
@@ -180,7 +172,28 @@ class MainActivity : ComponentActivity() {
 							}
 							Button(onClick = {
 								searchJob?.cancel()
-								createDocumentLauncher.launch(fileName)
+								val treeUri = lastTreeUri
+								if (treeUri != null) {
+									lifecycleScope.launch {
+										val existing = mutableListOf<Uri>()
+										val rootDocumentId = DocumentsContract.getTreeDocumentId(treeUri)
+										searchInFolder(treeUri, rootDocumentId, fileName, existing, recursive = false)
+										if (existing.isNotEmpty()) {
+											pendingOverwrite = existing.first()
+										} else {
+											val newUri = DocumentsContract.createDocument(
+												contentResolver,
+												treeUri,
+												"application/octet-stream",
+												fileName
+											)
+											if (newUri != null && sourceUri != null) {
+												copyFile(sourceUri!!, newUri)
+												finish()
+											}
+										}
+									}
+								}
 							}) {
 								Text("Pegar aquí")
 							}
