@@ -1,120 +1,120 @@
 package com.darielvrx.easyclaudemobile
 
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Column
+import androidx.compose.material3.Button
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.foundation.layout.Column
-import androidx.compose.material3.Button
-import androidx.compose.material3.TextField
-import androidx.compose.material3.Text
+import android.provider.OpenableColumns
 import android.provider.DocumentsContract
 import kotlinx.coroutines.ensureActive
-import android.content.Intent
-import android.net.Uri
-import android.provider.OpenableColumns
 
 class MainActivity : ComponentActivity() {
-	
+
 	private var sourceUri: Uri? = null
 
 	private val createDocumentLauncher = registerForActivityResult(
 		ActivityResultContracts.CreateDocument("*/*")
 	) { destinationUri: Uri? ->
 		if (destinationUri != null && sourceUri != null) {
-			copiarArchivo(sourceUri!!, destinationUri)
+			copyFile(sourceUri!!, destinationUri)
 		}
 	}
-	
+
 	private val openTreeLauncher = registerForActivityResult(
 		ActivityResultContracts.OpenDocumentTree()
 	) { treeUri: Uri? ->
 		// aquí vamos a recorrer el árbol, próximo paso
 	}
-	
-	private fun obtenerNombreArchivo(uri: Uri): String {
-		var nombre = "archivo"
+
+	private fun getFileName(uri: Uri): String {
+		var name = "archivo"
 		contentResolver.query(uri, null, null, null, null)?.use { cursor ->
 			val index = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
 			if (cursor.moveToFirst() && index >= 0) {
-				nombre = cursor.getString(index)
+				name = cursor.getString(index)
 			}
 		}
-		return nombre
+		return name
 	}
-	
-	private suspend fun buscarCoincidencias(
+
+	private fun copyFile(source: Uri, destination: Uri) {
+		contentResolver.openInputStream(source)?.use { input ->
+			contentResolver.openOutputStream(destination)?.use { output ->
+				input.copyTo(output)
+			}
+		}
+	}
+
+	private suspend fun searchMatches(
 		treeUri: Uri,
-		nombreBuscado: String
+		searchedName: String
 	): List<Uri> {
-		val resultados = mutableListOf<Uri>()
-		buscarEnCarpeta(treeUri, nombreBuscado, resultados)
-		return resultados
+		val results = mutableListOf<Uri>()
+		searchInFolder(treeUri, searchedName, results)
+		return results
 	}
 
-	private suspend fun buscarEnCarpeta(
-		carpetaUri: Uri,
-		nombreBuscado: String,
-		resultados: MutableList<Uri>
+	private suspend fun searchInFolder(
+		folderUri: Uri,
+		searchedName: String,
+		results: MutableList<Uri>
 	) {
-		val documentId = DocumentsContract.getTreeDocumentId(carpetaUri)
-		val hijosUri = DocumentsContract.buildChildDocumentsUriUsingTree(carpetaUri, documentId)
+		val documentId = DocumentsContract.getTreeDocumentId(folderUri)
+		val childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(folderUri, documentId)
 
-		val proyeccion = arrayOf(
+		val projection = arrayOf(
 			DocumentsContract.Document.COLUMN_DOCUMENT_ID,
 			DocumentsContract.Document.COLUMN_DISPLAY_NAME,
 			DocumentsContract.Document.COLUMN_MIME_TYPE
 		)
 
-		contentResolver.query(hijosUri, proyeccion, null, null, null)?.use { cursor ->
-			val indiceId = cursor.getColumnIndex(DocumentsContract.Document.COLUMN_DOCUMENT_ID)
-			val indiceNombre = cursor.getColumnIndex(DocumentsContract.Document.COLUMN_DISPLAY_NAME)
-			val indiceMime = cursor.getColumnIndex(DocumentsContract.Document.COLUMN_MIME_TYPE)
+		contentResolver.query(childrenUri, projection, null, null, null)?.use { cursor ->
+			val idIndex = cursor.getColumnIndex(DocumentsContract.Document.COLUMN_DOCUMENT_ID)
+			val nameIndex = cursor.getColumnIndex(DocumentsContract.Document.COLUMN_DISPLAY_NAME)
+			val mimeIndex = cursor.getColumnIndex(DocumentsContract.Document.COLUMN_MIME_TYPE)
 
 			while (cursor.moveToNext()) {
 				coroutineContext.ensureActive()
 
-				val hijoId = cursor.getString(indiceId)
-				val hijoNombre = cursor.getString(indiceNombre)
-				val hijoMime = cursor.getString(indiceMime)
-				val esCarpeta = hijoMime == DocumentsContract.Document.MIME_TYPE_DIR
+				val childId = cursor.getString(idIndex)
+				val childName = cursor.getString(nameIndex)
+				val childMime = cursor.getString(mimeIndex)
+				val isFolder = childMime == DocumentsContract.Document.MIME_TYPE_DIR
 
-				val hijoUri = DocumentsContract.buildDocumentUriUsingTree(carpetaUri, hijoId)
+				val childUri = DocumentsContract.buildDocumentUriUsingTree(folderUri, childId)
 
-				if (hijoNombre == nombreBuscado) {
-					resultados.add(hijoUri)
+				if (childName == searchedName) {
+					results.add(childUri)
 				}
 
-				if (esCarpeta) {
-					buscarEnCarpeta(hijoUri, nombreBuscado, resultados)
+				if (isFolder) {
+					searchInFolder(childUri, searchedName, results)
 				}
 			}
 		}
 	}
 
-	private fun copiarArchivo(origen: Uri, destino: Uri) {
-		contentResolver.openInputStream(origen)?.use { input ->
-			contentResolver.openOutputStream(destino)?.use { output ->
-				input.copyTo(output)
-			}
-		}
-	}
-	
 	override fun onCreate(savedInstanceState: Bundle?) {
 		super.onCreate(savedInstanceState)
 		setContent {
 			val uri = intent.getParcelableExtra<Uri>(Intent.EXTRA_STREAM)
 			if (uri != null) {
 				sourceUri = uri
-				var nombreArchivo by remember { mutableStateOf(obtenerNombreArchivo(uri)) }
+				var fileName by remember { mutableStateOf(getFileName(uri)) }
 				Column {
 					TextField(
-						value = nombreArchivo,
-						onValueChange = { nombreArchivo = it }
+						value = fileName,
+						onValueChange = { fileName = it }
 					)
 					Button(onClick = { openTreeLauncher.launch(null) }) {
 						Text("Continuar")
