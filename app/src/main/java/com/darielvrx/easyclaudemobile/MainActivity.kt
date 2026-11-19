@@ -3,6 +3,7 @@ package com.darielvrx.easyclaudemobile
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material3.Text
 import android.content.Intent
 import android.net.Uri
