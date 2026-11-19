@@ -23,6 +23,8 @@ import kotlin.coroutines.coroutineContext
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 sealed class SearchState {
 	object Searching : SearchState()
@@ -86,10 +88,10 @@ class MainActivity : ComponentActivity() {
 	private suspend fun searchMatches(
 		treeUri: Uri,
 		searchedName: String
-	): List<Uri> {
+	): List<Uri> = withContext(Dispatchers.IO) {
 		val results = mutableListOf<Uri>()
 		searchInFolder(treeUri, searchedName, results)
-		return results
+		results
 	}
 
 	private suspend fun searchInFolder(
