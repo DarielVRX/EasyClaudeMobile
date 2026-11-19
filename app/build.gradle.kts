@@ -9,7 +9,7 @@ android {
 	compileSdk = 34
 	
 	signingConfigs {
-		create("debug") {
+		getByName("debug") {
 			storeFile = file(System.getenv("DEBUG_KEYSTORE_PATH") ?: "debug.keystore")
 			storePassword = System.getenv("DEBUG_KEYSTORE_PASSWORD") ?: "android"
 			keyAlias = System.getenv("DEBUG_KEY_ALIAS") ?: "androiddebugkey"
