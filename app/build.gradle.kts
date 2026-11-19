@@ -21,8 +21,8 @@ android {
 		applicationId = "com.darielvrx.easyclaudemobile"
 		minSdk = 24
 		targetSdk = 34
-		versionCode = 13
-		versionName = "0.1.0-beta.1"
+		versionCode = 14
+		versionName = "0.1.0-beta.2"
 	}
 	
 	buildTypes {

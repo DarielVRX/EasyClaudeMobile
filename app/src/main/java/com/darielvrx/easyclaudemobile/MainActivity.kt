@@ -181,9 +181,13 @@ class MainActivity : ComponentActivity() {
 										if (existing.isNotEmpty()) {
 											pendingOverwrite = existing.first()
 										} else {
+											val parentDocumentUri = DocumentsContract.buildDocumentUriUsingTree(
+												treeUri,
+												rootDocumentId
+											)
 											val newUri = DocumentsContract.createDocument(
 												contentResolver,
-												treeUri,
+												parentDocumentUri,
 												"application/octet-stream",
 												fileName
 											)
