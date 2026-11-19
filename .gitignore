@@ -1,0 +1,22 @@
+# CodeMobile: backups automáticos (ver Strategy.IN_REPO_GITIGNORE)
+*.codeckbak
+
+# Gradle
+.gradle/
+build/
+app/build/
+
+# Local config 
+local.properties
+
+# Android Studio / IntelliJ
+.idea/
+*.iml
+
+# Keystores 
+*.keystore
+*.jks
+
+# Logs y archivos temporales del sistema
+*.log
+.DS_Store
