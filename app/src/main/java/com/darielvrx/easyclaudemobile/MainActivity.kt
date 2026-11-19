@@ -1,8 +1,8 @@
 package com.darielvrx.easyclaudemobile
 
 import android.os.Bundle
-import android.activity.ComponentActivity
-import android.activity.compose.setContent
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
 import androidx.compose.material3.Text
 
 class MainActivity : ComponentActivity() {
@@ -10,5 +10,6 @@ class MainActivity : ComponentActivity() {
 		super.onCreate(savedInstanceState)
 		setContent {
 			Text(text = "Hola, EasyClaude")
+		}
 	}
 }
