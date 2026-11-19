@@ -8,6 +8,13 @@ import android.content.Intent
 import android.net.Uri
 
 class MainActivity : ComponentActivity() {
+	
+	private val createDocumentLauncher = registerForActivityResult(
+		ActivityResultContracts.CreateDocument("*/*")
+	) { destinationUri ->
+		// aquí vamos a copiar el archivo, en el siguiente paso
+	}
+	
 	override fun onCreate(savedInstanceState: Bundle?) {
 		super.onCreate(savedInstanceState)
 		setContent {
@@ -16,6 +23,9 @@ class MainActivity : ComponentActivity() {
 				"Archivo recibido: $uri"
 			} else {
 				"Hola, EasyClaude"
+			}
+			if (uri != null) {
+				createDocumentLauncher.launch("archivo_prueba.txt")
 			}
 			Text(text = mensaje)
 		}
