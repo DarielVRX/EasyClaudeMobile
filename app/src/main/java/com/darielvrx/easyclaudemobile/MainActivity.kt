@@ -9,6 +9,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.ui.Modifier
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -40,6 +41,7 @@ class MainActivity : ComponentActivity() {
 	private var fileNameInitialized = false
 	private var lastTreeUri: Uri? = null
 	private var searchJob: Job? = null
+	private var pendingOverwrite by mutableStateOf<Uri?>(null)
 
 	private val createDocumentLauncher = registerForActivityResult(
 		ActivityResultContracts.CreateDocument("*/*")
@@ -159,8 +161,7 @@ class MainActivity : ComponentActivity() {
 									for (matchUri in currentState.uris) {
 										val path = DocumentsContract.getDocumentId(matchUri)
 										Button(onClick = {
-											copyFile(sourceUri!!, matchUri)
-											finish()
+											pendingOverwrite = matchUri
 										}) {
 											Text(path)
 										}
@@ -184,6 +185,29 @@ class MainActivity : ComponentActivity() {
 								Text("Pegar aquí")
 							}
 						}
+
+						val overwriteUri = pendingOverwrite
+						if (overwriteUri != null) {
+							AlertDialog(
+								onDismissRequest = { pendingOverwrite = null },
+								title = { Text("Sobrescribir archivo") },
+								text = { Text("Ya existe un archivo con este nombre en esa ubicación. ¿Deseas sobrescribirlo? Esta acción no se puede deshacer.") },
+								confirmButton = {
+									Button(onClick = {
+										copyFile(sourceUri!!, overwriteUri)
+										pendingOverwrite = null
+										finish()
+									}) {
+										Text("Sobrescribir")
+									}
+								},
+								dismissButton = {
+									Button(onClick = { pendingOverwrite = null }) {
+										Text("Cancelar")
+									}
+								}
+							)
+						}
 					}
 				} else {
 					Column {
@@ -198,11 +222,6 @@ class MainActivity : ComponentActivity() {
 				}
 			} else {
 				Text(text = "Hola, EasyClaude")
-			}
-		}
-	}
-}
-ude")
 			}
 		}
 	}
