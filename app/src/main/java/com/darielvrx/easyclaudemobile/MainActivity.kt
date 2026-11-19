@@ -37,6 +37,7 @@ class MainActivity : ComponentActivity() {
 	private var sourceUri: Uri? = null
 	private var searchState by mutableStateOf<SearchState?>(null)
 	private var fileName by mutableStateOf("")
+	private var fileNameInitialized = false
 	private var lastTreeUri: Uri? = null
 	private var searchJob: Job? = null
 
@@ -45,7 +46,7 @@ class MainActivity : ComponentActivity() {
 	) { destinationUri: Uri? ->
 		if (destinationUri != null && sourceUri != null) {
 			copyFile(sourceUri!!, destinationUri)
-			searchState = null
+			finish()
 		}
 	}
 
@@ -141,8 +142,9 @@ class MainActivity : ComponentActivity() {
 			val uri = intent.getParcelableExtra<Uri>(Intent.EXTRA_STREAM)
 			if (uri != null) {
 				sourceUri = uri
-				if (fileName.isEmpty()) {
+				if (!fileNameInitialized) {
 					fileName = getFileName(uri)
+					fileNameInitialized = true
 				}
 				val currentState = searchState
 				if (currentState != null) {
@@ -158,7 +160,7 @@ class MainActivity : ComponentActivity() {
 										val path = DocumentsContract.getDocumentId(matchUri)
 										Button(onClick = {
 											copyFile(sourceUri!!, matchUri)
-											searchState = null
+											finish()
 										}) {
 											Text(path)
 										}
@@ -196,6 +198,11 @@ class MainActivity : ComponentActivity() {
 				}
 			} else {
 				Text(text = "Hola, EasyClaude")
+			}
+		}
+	}
+}
+ude")
 			}
 		}
 	}
