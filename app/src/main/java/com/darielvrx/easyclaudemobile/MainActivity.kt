@@ -84,8 +84,14 @@ class MainActivity : ComponentActivity() {
 	}
 
 	private fun copyFile(source: Uri, destination: Uri) {
+		// "wt" (write + truncate), no el modo "w" por defecto: para varios
+		// DocumentsProvider (incluido el de almacenamiento externo, que es
+		// el que entrega OpenDocumentTree) "w" no garantiza truncar un
+		// archivo YA existente, y en la práctica se comporta como append —
+		// al sobrescribir, el contenido nuevo quedaba escrito después del
+		// viejo en vez de reemplazarlo, duplicando el texto.
 		contentResolver.openInputStream(source)?.use { input ->
-			contentResolver.openOutputStream(destination)?.use { output ->
+			contentResolver.openOutputStream(destination, "wt")?.use { output ->
 				input.copyTo(output)
 			}
 		}
